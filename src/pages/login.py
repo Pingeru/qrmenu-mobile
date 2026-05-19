@@ -26,6 +26,7 @@ def build(page: ft.Page) -> ft.View:
 
         if error:
             login_button.disabled = False
+            page.show_dialog(ft.AlertDialog(modal=True, title=ft.Text("Error"), content=ft.Text(error), actions=[ft.TextButton("OK", on_click=page.pop_dialog)]))
             page.update()
         else:
             await page.push_route("/dashboard")
