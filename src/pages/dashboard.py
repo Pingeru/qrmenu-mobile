@@ -4,6 +4,7 @@ import flet as ft
 from state import session
 from services import auth
 from utils.validators import validate_email, validate_password, validate_name, validate_phone
+from view.sidebar import build_sidebar
 
 
 def build(page: ft.Page) -> ft.View:
@@ -50,10 +51,6 @@ def build(page: ft.Page) -> ft.View:
         bgcolor=ft.Colors.RED,
         disabled=False,
     )
-    logout_button = ft.Button(
-        "Logout",
-        disabled=False,
-    )
     edit_button = ft.TextButton(
         "Edit"
     )
@@ -66,18 +63,12 @@ def build(page: ft.Page) -> ft.View:
         phone_field.read_only = not enabled
         password_field.read_only = not enabled
         delete_button.disabled = enabled
-        logout_button.disabled = enabled
         edit_button.content = "Save" if enabled else "Edit"
         if not enabled:
             error_text.value = ""
-            error_text.color = ft.Colors.RED
         page.update()
 
-    async def on_logout(e):
-        auth.logout()
-        await page.push_route("/login")
-
-    async def on_delete_account(e):
+    async def on_delete(e):
         confirm_deletion_dialog = ft.AlertDialog(
             modal=True,
             title=ft.Text("Confirm Account Deletion"),
@@ -175,18 +166,14 @@ def build(page: ft.Page) -> ft.View:
         error_text.color = ft.Colors.GREEN
         page.update()
 
-    delete_button.on_click = on_delete_account
-    logout_button.on_click = on_logout
+    delete_button.on_click = on_delete
     edit_button.on_click = on_edit
 
-    return ft.View(
-        route="/dashboard",
+    sidebar_component = build_sidebar(page)
+
+    content = ft.Column(
+        expand=True,
         controls=[
-            ft.AppBar(
-                title=ft.Text("Profile"),
-                center_title=True,
-                actions=[edit_button],
-            ),
             error_text,
             first_name_field,
             last_name_field,
@@ -194,13 +181,40 @@ def build(page: ft.Page) -> ft.View:
             phone_field,
             password_field,
             ft.Row(
-                controls=[delete_button, logout_button],
+                controls=[delete_button],
                 alignment=ft.MainAxisAlignment.CENTER,
             ),
+            ft.Container(expand=True),
         ],
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-        vertical_alignment=ft.MainAxisAlignment.CENTER,
-        padding=20,
+        scroll=ft.ScrollMode.AUTO,
+    )
+
+    # Page body fills the full width — sidebar is layered on top via Stack
+    page_body = ft.Column(
+        expand=True,
+        controls=[
+            ft.AppBar(
+                title=ft.Text("Profile"),
+                center_title=True,
+                actions=[edit_button],
+            ),
+            content,
+        ],
+    )
+
+    main_content = ft.Stack(
+        expand=True,
+        controls=[
+            page_body,
+            sidebar_component,   # overlays the body; does not push it
+        ],
+    )
+
+    return ft.View(
+        route="/dashboard",
+        controls=[main_content],
+        padding=0,
     )
 
 

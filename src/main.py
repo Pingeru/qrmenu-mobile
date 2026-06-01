@@ -1,5 +1,5 @@
-import flet as ft, asyncio
-from pages import login, register, dashboard
+import flet as ft
+from pages import login, menu, register, dashboard
 from state import session
 
 async def main(page: ft.Page):
@@ -9,9 +9,9 @@ async def main(page: ft.Page):
         "/login":       login.build,
         "/register":    register.build,
         "/dashboard":   dashboard.build,
-        #"/extra":       placeholder.build,
+        "/menu":        menu.build,
     }
-    PROTECTED = {"/dashboard", "/extra"}
+    PROTECTED = {"/dashboard", "/menu"}
 
     async def route_change(e):
         page.views.clear()
