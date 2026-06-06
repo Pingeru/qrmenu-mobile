@@ -26,7 +26,7 @@ async def login(email: str, password: str) -> str | None:
         else:
             return "Something went wrong. Please try again."
 
-    except httpx.ConnectError:
+    except httpx.RequestError:
         return "Cannot reach server. Check your connection."
 
 

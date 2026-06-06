@@ -1,40 +1,39 @@
+from typing import Any
 import httpx
-
-from state import session
 from services.auth import API_BASE
 
 
-async def fetch_categories() -> dict[str, list[dict]]:
+async def fetch_categories(business_id: str) -> list[dict[str, Any]]:
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(f"{API_BASE}/business/categories", timeout=10)
     except httpx.RequestError:
-        return {}
+        return []
 
     if resp.status_code == 200:
         data = resp.json()
-        return data.get("categories", {}) if isinstance(data, dict) else {}
+        return [category for category in data.get("categories", []) if category.get("is_active", True) and category["business_id"] == business_id]   
 
-    return {}
+    return []
 
 
-async def fetch_products_for_category(category_id: str) -> dict[str, list[dict]]:
+async def fetch_products_for_category(category_id: str) -> list[dict[str, Any]]:
     url = f"{API_BASE}/business/products?category_id={category_id}"
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(url, timeout=10)
     except httpx.RequestError:
-        return {}
+        return []
 
     if resp.status_code != 200:
-        return {}
+        return []
 
     try:
         data = resp.json()
     except ValueError:
-        return {}
+        return []
 
     if isinstance(data, dict) and isinstance(data.get("products"), list):
-        return data.get("products")
+        return [product for product in data["products"] if product.get("is_active", True)]
 
-    return {}
+    return []

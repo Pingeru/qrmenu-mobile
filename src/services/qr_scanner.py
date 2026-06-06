@@ -30,11 +30,12 @@ def _scan_qr_code_sync() -> Optional[str]:
                 break
             
             # Detect and decode QR code
-            success, decoded_info, points = detector.detectAndDecode(frame)
+            data, bbox, straight_qrcode = detector.detectAndDecode(frame)
             
-            if success and decoded_info:
-                # Return the decoded QR code content
-                return decoded_info
+            # returns https://qrmenu.dovanay.com/menu/6a13f8d3be5344199f7811e0 for test
+            # we should return business id part
+            if data:
+                return data.split("/")[-1]       
             
             # Display the frame (optional, for feedback)
             cv2.imshow("QR Code Scanner - Press 'q' to cancel", frame)

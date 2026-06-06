@@ -28,4 +28,4 @@ async def main(page: ft.Page):
     await page.push_route("/login")
 
 if __name__ == "__main__":
-    ft.run(main)
+    ft.run(main, view=ft.AppView.WEB_BROWSER)

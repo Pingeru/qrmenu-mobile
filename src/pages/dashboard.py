@@ -4,7 +4,7 @@ import flet as ft
 from state import session
 from services import auth
 from utils.validators import validate_email, validate_password, validate_name, validate_phone
-from view.sidebar import build_sidebar
+from view.app_bottom_bar import build_bottom_bar
 
 
 def build(page: ft.Page) -> ft.View:
@@ -169,7 +169,7 @@ def build(page: ft.Page) -> ft.View:
     delete_button.on_click = on_delete
     edit_button.on_click = on_edit
 
-    sidebar_component = build_sidebar(page)
+    sidebar_component = build_bottom_bar(page)
 
     content = ft.Column(
         expand=True,
@@ -203,7 +203,7 @@ def build(page: ft.Page) -> ft.View:
         ],
     )
 
-    main_content = ft.Stack(
+    main_content = ft.Column(
         expand=True,
         controls=[
             page_body,
