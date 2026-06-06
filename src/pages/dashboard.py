@@ -169,7 +169,10 @@ def build(page: ft.Page) -> ft.View:
     delete_button.on_click = on_delete
     edit_button.on_click = on_edit
 
-    sidebar_component = build_bottom_bar(page)
+    nav_bar = ft.SafeArea(
+        content=build_bottom_bar(page),
+        align=ft.Alignment.BOTTOM_CENTER,
+    )
 
     content = ft.Column(
         expand=True,
@@ -190,7 +193,6 @@ def build(page: ft.Page) -> ft.View:
         scroll=ft.ScrollMode.AUTO,
     )
 
-    # Page body fills the full width — sidebar is layered on top via Stack
     page_body = ft.Column(
         expand=True,
         controls=[
@@ -203,17 +205,12 @@ def build(page: ft.Page) -> ft.View:
         ],
     )
 
-    main_content = ft.Column(
-        expand=True,
-        controls=[
-            page_body,
-            sidebar_component,   # overlays the body; does not push it
-        ],
-    )
-
     return ft.View(
         route="/dashboard",
-        controls=[main_content],
+        controls=[
+            page_body,
+            nav_bar
+        ],
         padding=0,
     )
 

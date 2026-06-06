@@ -2,7 +2,7 @@ import flet as ft
 from services import auth
 
 
-def build_bottom_bar(page: ft.Page) -> ft.SafeArea:
+def build_bottom_bar(page: ft.Page):
     """
     Build a collapsible side panel with hamburger menu at the top.
     Shows/hides the sidebar options when hamburger icon is clicked.
@@ -32,10 +32,8 @@ def build_bottom_bar(page: ft.Page) -> ft.SafeArea:
             ],
         ),
         height=60,
+        align=ft.Alignment.BOTTOM_CENTER,
     )
 
-    return ft.SafeArea(
-            content=bottom_appbar,
-            align=ft.Alignment.BOTTOM_CENTER,
-        )
+    return bottom_appbar
     

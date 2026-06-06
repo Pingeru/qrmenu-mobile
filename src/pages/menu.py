@@ -5,12 +5,15 @@ from services.qr_scanner import scan_qr_code
 from view.app_bottom_bar import build_bottom_bar
 
 def build(page: ft.Page) -> ft.View:
-    sidebar = build_bottom_bar(page)
+    nav_bar = ft.SafeArea(
+        content=build_bottom_bar(page),
+        align=ft.Alignment.BOTTOM_CENTER,
+    )
     current_business_id = ""
 
     async def on_qr_click(e):
         # Show loading state
-        content_area.controls = [
+        page_body.controls = [
             ft.Text("Opening camera... Scanning QR code", size=18, weight=ft.FontWeight.BOLD),
             ft.ProgressBar(value=None, width=300),
         ]
@@ -19,7 +22,7 @@ def build(page: ft.Page) -> ft.View:
         # Scan QR code
         business_id = await scan_qr_code()
         if not business_id:
-            content_area.controls = [
+            page_body.controls = [
                 ft.Text("No QR code detected or scan cancelled.", size=16),
                 ft.ElevatedButton(
                     "Try Again",
@@ -30,7 +33,7 @@ def build(page: ft.Page) -> ft.View:
             return
 
         # QR scanned successfully, now fetch and display all categories
-        content_area.controls = [
+        page_body.controls = [
             ft.Text("Loading menu...", size=18, weight=ft.FontWeight.BOLD),
             ft.ProgressBar(value=None, width=300),
         ]
@@ -44,7 +47,7 @@ def build(page: ft.Page) -> ft.View:
         categories = await menu_service.fetch_categories(business_id)
         
         if not categories:
-            content_area.controls = [
+            page_body.controls = [
                 ft.Text("No categories found.", size=16),
                 ft.Button(
                     "Try Again",
@@ -85,8 +88,7 @@ def build(page: ft.Page) -> ft.View:
         )
 
         def on_back_to_qr_scanner(_):
-            content_area.controls = [intro_text, qr_button]
-            main_content.controls = [page_body, sidebar]
+            page_body.controls = [intro_text, qr_button]
             page.update() 
 
         category_area = ft.Column(
@@ -109,7 +111,7 @@ def build(page: ft.Page) -> ft.View:
             ],
             expand=True,
         )
-        main_content.controls = [category_area, sidebar]
+        page_body.controls = [category_area]
         page.update()
 
     async def build_product_grid(category_id: str):
@@ -117,7 +119,7 @@ def build(page: ft.Page) -> ft.View:
         for product in products:
             print(product)
         if not products:
-            content_area.controls = [
+            page_body.controls = [
                 ft.Text("No products found in this category.", size=16),
                 ft.Button(
                     "Back to Categories",
@@ -197,7 +199,7 @@ def build(page: ft.Page) -> ft.View:
             expand=True,
         )
 
-        main_content.controls = [product_area, sidebar]
+        page_body.controls = [product_area]
         page.update()
         
         
@@ -220,33 +222,29 @@ def build(page: ft.Page) -> ft.View:
         width=300,
     )
 
-    content_area = ft.Column(
+    page_body = ft.Column(
         expand=True,
         spacing=20,
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         controls=[
             intro_text,
             qr_button,
         ],
+        alignment=ft.MainAxisAlignment.CENTER,
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
     )
 
-    page_body = ft.Container(
-        content=content_area,
+    main_content = ft.SafeArea(
         expand=True,
-        alignment=ft.Alignment.CENTER,
-    )
-
-    main_content = ft.Column(
-        expand=True,
-        controls=[
-            page_body,
-            sidebar,   # overlays the body; does not push it
-        ],
+        content=page_body,
+        align=ft.Alignment.CENTER,
     )
 
     return ft.View(
         route="/menu",
-        controls=[main_content],
+        controls=[
+            main_content,
+            nav_bar
+        ],
         padding=0,
     )
 
