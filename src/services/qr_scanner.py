@@ -35,7 +35,10 @@ def _scan_qr_code_sync() -> Optional[str]:
             # returns https://qrmenu.dovanay.com/menu/6a13f8d3be5344199f7811e0 for test
             # we should return business id part
             if data:
-                return data.split("/")[-1]       
+                # Extract business_id, handling trailing slashes
+                business_id = data.rstrip("/").split("/")[-1]
+                if business_id:  # Ensure we got a valid ID
+                    return business_id       
             
             # Display the frame (optional, for feedback)
             cv2.imshow("QR Code Scanner - Press 'q' to cancel", frame)

@@ -174,3 +174,5 @@ def logout():
     session.token = None
     session.refresh_token = None
     session.user = None
+    session.clear_cart()
+    session.clear_menu()

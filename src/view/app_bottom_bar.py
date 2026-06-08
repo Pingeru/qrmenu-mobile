@@ -15,6 +15,9 @@ def build_bottom_bar(page: ft.Page):
     async def on_menu_click(e):
         await page.push_route("/menu")
 
+    async def on_orders_click(e):
+        await page.push_route("/orders")
+
     async def on_logout_click(e):
         auth.logout()
         await page.push_route("/login")
@@ -26,6 +29,7 @@ def build_bottom_bar(page: ft.Page):
         content=ft.Row(
             controls=[
                 ft.IconButton(icon=ft.Icons.FOOD_BANK, icon_color=ft.Colors.WHITE, on_click=on_menu_click),
+                ft.IconButton(icon=ft.Icons.RECEIPT_LONG, icon_color=ft.Colors.WHITE, on_click=on_orders_click),
                 ft.Container(expand=True),
                 ft.IconButton(icon=ft.Icons.PERSON, icon_color=ft.Colors.WHITE, on_click=on_profile_click),
                 ft.IconButton(icon=ft.Icons.LOGOUT, icon_color=ft.Colors.WHITE, on_click=on_logout_click),

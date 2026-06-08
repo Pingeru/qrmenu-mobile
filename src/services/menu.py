@@ -12,7 +12,11 @@ async def fetch_categories(business_id: str) -> list[dict[str, Any]]:
 
     if resp.status_code == 200:
         data = resp.json()
-        return [category for category in data.get("categories", []) if category.get("is_active", True) and category["business_id"] == business_id]   
+        # Additional client-side filter for safety
+        return [
+            category for category in data.get("categories", [])
+            if category.get("is_active", True) and category.get("business_id") == business_id
+        ]   
 
     return []
 
