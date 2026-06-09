@@ -1,5 +1,5 @@
 import flet as ft
-from pages import login, menu, register, dashboard, orders
+from pages import login, menu, register, dashboard, orders, forgot_password
 from state import session
 
 async def main(page: ft.Page):
@@ -8,6 +8,7 @@ async def main(page: ft.Page):
         "/":            login.build,
         "/login":       login.build,
         "/register":    register.build,
+        "/forgot-password": forgot_password.build,  # Assuming forgot password uses the same login page
         "/dashboard":   dashboard.build,
         "/menu":        menu.build,
         "/orders":      orders.build,

@@ -65,20 +65,32 @@ def build(page: ft.Page) -> ft.View:
 
     register_button.on_click = on_register
 
+    main_content = ft.Column(
+            expand=True,
+            controls=[
+                ft.AppBar(title=ft.Text("Register"), center_title=True),
+                first_name_field,
+                last_name_field,
+                phone_field,
+                email_field,
+                password_field,
+                register_button,
+                ft.TextButton(
+                    "Already have an account? Login",
+                    on_click=lambda _: asyncio.create_task(page.push_route("/login")),
+                ),
+            ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            alignment=ft.MainAxisAlignment.CENTER,
+        )
+    
     return ft.View(
         route="/register",
         controls=[
-            ft.AppBar(title=ft.Text("Register"), center_title=True),
-            first_name_field,
-            last_name_field,
-            phone_field,
-            email_field,
-            password_field,
-            register_button,
-            ft.TextButton(
-                "Already have an account? Login",
-                on_click=lambda _: asyncio.create_task(page.push_route("/login")),
-            ),
+            ft.SafeArea(
+                expand=True,
+                content=main_content
+            )
         ],
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         vertical_alignment=ft.MainAxisAlignment.CENTER,

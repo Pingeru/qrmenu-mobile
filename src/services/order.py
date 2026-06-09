@@ -26,7 +26,7 @@ async def create_order(business_id: str, items: list[dict]) -> tuple[dict | None
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                f"{API_BASE}/client/orders/",
+                f"{API_BASE}/client/orders",
                 headers={"Authorization": f"Bearer {session.token}"},
                 json=payload,
                 timeout=15,
@@ -35,7 +35,7 @@ async def create_order(business_id: str, items: list[dict]) -> tuple[dict | None
         return None, "Cannot reach server. Check your connection."
 
     if response.status_code == 201:
-        return response.json(), None
+        return response.json().get("order"), None
     elif response.status_code == 400:
         return None, "Invalid order data. Please check your items."
     elif response.status_code == 401:
@@ -64,7 +64,7 @@ async def get_orders() -> tuple[list[dict] | None, str | None]:
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                f"{API_BASE}/client/orders/",
+                f"{API_BASE}/client/orders",
                 headers={"Authorization": f"Bearer {session.token}"},
                 timeout=15,
             )
@@ -72,7 +72,10 @@ async def get_orders() -> tuple[list[dict] | None, str | None]:
         return None, "Cannot reach server. Check your connection."
 
     if response.status_code == 200:
-        return response.json(), None
+        data = response.json()
+        # Backend returns {"orders": [...]} - extract the list
+        orders = data.get("orders", []) if isinstance(data, dict) else data
+        return orders, None
     elif response.status_code == 401:
         return None, "Session expired. Please log in again."
     else:

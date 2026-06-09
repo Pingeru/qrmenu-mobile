@@ -34,7 +34,7 @@ def _status_badge(status: str) -> ft.Container:
 # ── page builder ──────────────────────────────────────────────────────────────
 
 def build(page: ft.Page) -> ft.View:
-    nav_bar = ft.SafeArea(
+    nav_bar = ft.Container(
         content=build_bottom_bar(page),
         align=ft.Alignment.BOTTOM_CENTER,
     )
@@ -115,7 +115,8 @@ def build(page: ft.Page) -> ft.View:
         order_id   = order.get("_id", "")
         status     = order.get("status", "placed")
         items      = order.get("items", [])
-        total      = order.get("total_price", 0.0)
+        # Backend returns total_amount, map to total for display
+        total      = order.get("total_amount", 0.0)
         created_at = order.get("created_at", "")
 
         # Format date nicely if ISO string present
@@ -131,7 +132,8 @@ def build(page: ft.Page) -> ft.View:
                         expand=True,
                     ),
                     ft.Text(
-                        f"${it.get('subtotal', 0.0):.2f}",
+                        # Backend returns price_at_purchase, multiply by quantity for item total
+                        f"${it.get('price_at_purchase', 0.0) * it.get('quantity', 1):.2f}",
                         size=13,
                         color=ft.Colors.ON_SURFACE_VARIANT,
                     ),
@@ -258,7 +260,7 @@ def build(page: ft.Page) -> ft.View:
     show_loading()
     asyncio.create_task(load_orders())
 
-    main_content = ft.SafeArea(
+    main_content = ft.Container(
         expand=True,
         content=body,
     )
@@ -266,9 +268,15 @@ def build(page: ft.Page) -> ft.View:
     return ft.View(
         route="/orders",
         controls=[
-            ft.Column(
+            ft.SafeArea(
                 expand=True,
-                controls=[app_bar, main_content],
+                content=ft.Column(
+                    expand=True,
+                    controls=[
+                        app_bar,
+                        main_content,
+                    ],
+                )
             ),
             nav_bar,
         ],

@@ -8,7 +8,7 @@ from view.app_bottom_bar import build_bottom_bar
 
 
 def build(page: ft.Page) -> ft.View:
-    nav_bar = ft.SafeArea(
+    nav_bar = ft.Container(
         content=build_bottom_bar(page),
         align=ft.Alignment.BOTTOM_CENTER,
     )
@@ -182,15 +182,20 @@ def build(page: ft.Page) -> ft.View:
                 return
 
             session.clear_cart()
-            page.pop_dialog()
             refresh_fab()
+
+            # Close the cart sheet
+            page.pop_dialog()
+
+            # Small delay to prevent WebSocket race condition when closing/opening dialogs
+            # await asyncio.sleep(0.3)
 
             page.show_dialog(ft.AlertDialog(
                 modal=True,
                 title=ft.Text("Order placed! 🎉"),
                 content=ft.Text(
                     f"Your order has been received.\n"
-                    f"Total: ${order.get('total_price', 0.0):.2f}"
+                    f"Total: ${order.get('total_amount', 0.0):.2f}"
                 ),
                 actions=[
                     ft.TextButton("View Orders", on_click=lambda _: asyncio.create_task(_go_orders())),
@@ -361,6 +366,7 @@ def build(page: ft.Page) -> ft.View:
 
         def on_back_to_qr_scanner(_):
             page_body.controls = [intro_text, qr_button]
+            session.clear_menu()
             page.update()
 
         category_area = ft.Column(
@@ -406,49 +412,60 @@ def build(page: ft.Page) -> ft.View:
             return ft.Container(
                 content=ft.Column(
                     controls=[
-                        ft.Image(
-                            src=(
-                                product.get("image_path", "")
-                                .replace("http://", "https://")
-                                or "https://via.placeholder.com/150?text=No+Image"
+                        ft.Container(
+                            content=ft.Image(
+                                src=(
+                                    product.get("image_path", "")
+                                    .replace("http://", "https://")
+                                    or "https://via.placeholder.com/150?text=No+Image"
+                                ),
+                                fit=ft.BoxFit.FILL,
+                                error_content=ft.Icon(
+                                    ft.Icons.IMAGE_NOT_SUPPORTED, size=50, color=ft.Colors.GREY
+                                ),
+                                border_radius=ft.BorderRadius.only(top_left=12, top_right=12),
+                                expand=True,
                             ),
-                            width=150,
-                            height=120,
-                            fit=ft.BoxFit.COVER,
-                            error_content=ft.Icon(
-                                ft.Icons.IMAGE_NOT_SUPPORTED, size=50, color=ft.Colors.GREY
-                            ),
-                            border_radius=10,
                             expand=True,
                         ),
-                        ft.Row(
-                            controls=[
-                                ft.Text(product["name"], size=13, weight=ft.FontWeight.W_500, expand=True),
-                                ft.Text(
-                                    f"${product['price']:.2f}",
-                                    size=13,
-                                    weight=ft.FontWeight.BOLD,
-                                    color=ft.Colors.GREEN,
-                                ),
-                            ],
-                            margin=ft.Margin(bottom=0, top=4, left=0, right=0),
-                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                        ),
-                        ft.Text(
-                            product.get("description", ""),
-                            size=11,
-                            color=ft.Colors.GREY_700,
-                            max_lines=2,
-                            overflow=ft.TextOverflow.ELLIPSIS,
-                            text_align=ft.TextAlign.CENTER,
-                        ),
-                        cart_row,
+                        ft.Container(
+                            content=ft.Column(
+                                controls=[
+                                    ft.Row(
+                                        controls=[
+                                            ft.Text(product["name"], size=13, weight=ft.FontWeight.W_500, expand=True),
+                                            ft.Text(
+                                                f"${product['price']:.2f}",
+                                                size=13,
+                                                weight=ft.FontWeight.BOLD,
+                                                color=ft.Colors.GREEN,
+                                            ),
+                                        ],
+                                        margin=ft.Margin(bottom=0, top=4, left=0, right=0),
+                                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                    ),
+                                    ft.Text(
+                                        product.get("description", ""),
+                                        size=11,
+                                        color=ft.Colors.GREY_700,
+                                        max_lines=2,
+                                        overflow=ft.TextOverflow.ELLIPSIS,
+                                        text_align=ft.TextAlign.CENTER,
+                                    ),
+                                    cart_row,
+                                ],
+                                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                alignment=ft.MainAxisAlignment.CENTER,
+                                spacing=6,
+                            ),
+                            padding=ft.Padding.only(left=12, right=12, bottom=12),
+                        )
                     ],
-                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                    alignment=ft.MainAxisAlignment.CENTER,
-                    spacing=6,
+                    horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+                    alignment=ft.MainAxisAlignment.START,
+                    spacing=0,
                 ),
-                padding=12,
+                padding=0,
                 border_radius=12,
                 bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
                 alignment=ft.Alignment.CENTER,
@@ -516,7 +533,7 @@ def build(page: ft.Page) -> ft.View:
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
     )
 
-    main_content = ft.SafeArea(
+    main_content = ft.Container(
         expand=True,
         content=page_body,
         align=ft.Alignment.CENTER,
@@ -531,7 +548,16 @@ def build(page: ft.Page) -> ft.View:
 
     return ft.View(
         route="/menu",
-        controls=[main_content, nav_bar],
+        controls=[
+            ft.SafeArea(
+                expand=True,
+                content=ft.Column(
+                    expand=True,
+                    controls=[main_content, nav_bar],
+                    alignment=ft.MainAxisAlignment.SPACE_EVENLY,
+                )
+            )
+        ],
         padding=0,
         floating_action_button=cart_fab,
         floating_action_button_location=ft.FloatingActionButtonLocation.CENTER_DOCKED,

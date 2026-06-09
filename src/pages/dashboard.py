@@ -38,14 +38,14 @@ def build(page: ft.Page) -> ft.View:
         width=300,
     )
     password_field = ft.TextField(
-        label="Password (leave empty to keep current)",
+        label="Password:",
         value="",
         password=True,
-        can_reveal_password=True,
         read_only=True,
         width=300,
+        tooltip="Leave blank to keep current password when editing profile",
+        visible=False,
     )
-
     delete_button = ft.Button(
         "Delete Account",
         bgcolor=ft.Colors.RED,
@@ -62,6 +62,7 @@ def build(page: ft.Page) -> ft.View:
         email_field.read_only = not enabled
         phone_field.read_only = not enabled
         password_field.read_only = not enabled
+        password_field.visible = enabled
         delete_button.disabled = enabled
         edit_button.content = "Save" if enabled else "Edit"
         if not enabled:
@@ -101,32 +102,34 @@ def build(page: ft.Page) -> ft.View:
 
         current_user = session.user or {}
         errors = []
-        first_name = first_name_field.value.strip() or current_user.get("first_name", "")
-        last_name = last_name_field.value.strip() or current_user.get("last_name", "")
-        email = email_field.value.strip() or current_user.get("email", "")
-        phone = phone_field.value.strip() or current_user.get("phone_number", "")
-        password = password_field.value.strip() or None
 
-        if first_name_field.value.strip():
+        new_first_name = first_name_field.value.strip()
+        new_last_name = last_name_field.value.strip()
+        new_email = email_field.value.strip()
+        new_phone = phone_field.value.strip()
+        new_password = password_field.value.strip() or None
+
+        first_name = new_first_name if new_first_name != current_user.get("first_name", "") else None
+        last_name = new_last_name if new_last_name != current_user.get("last_name", "") else None
+        email = new_email if new_email != current_user.get("email", "") else None
+        phone = new_phone if new_phone != current_user.get("phone_number", "") else None
+        password = new_password
+
+        if first_name is not None:
             error = validate_name(first_name, "First name")
-            if error:
-                errors.append(error)
-        if last_name_field.value.strip():
+            if error: errors.append(error)
+        if last_name is not None:
             error = validate_name(last_name, "Last name")
-            if error:
-                errors.append(error)
-        if email_field.value.strip():
+            if error: errors.append(error)
+        if email is not None:
             error = validate_email(email)
-            if error:
-                errors.append(error)
-        if phone_field.value.strip():
+            if error: errors.append(error)
+        if phone is not None:
             error = validate_phone(phone)
-            if error:
-                errors.append(error)
+            if error: errors.append(error)
         if password is not None:
             error = validate_password(password)
-            if error:
-                errors.append(error)
+            if error: errors.append(error)
 
         if errors:
             error_text.value = "\n".join(errors)
@@ -148,28 +151,20 @@ def build(page: ft.Page) -> ft.View:
             page.update()
             return
 
-        session.user = {
-            **current_user,
-            "first_name": first_name,
-            "last_name": last_name,
-            "email": email,
-            "phone_number": phone,
-        }
-
-        first_name_field.value = first_name
-        last_name_field.value = last_name
-        email_field.value = email
-        phone_field.value = phone
+        first_name_field.value = new_first_name
+        last_name_field.value = new_last_name
+        email_field.value = new_email
+        phone_field.value = new_phone
         password_field.value = ""
         set_edit_mode(False)
-        error_text.value = "Profile updated successfully."
+        error_text.value = "" if not any([first_name, last_name, email, phone, password]) else "Profile updated successfully."
         error_text.color = ft.Colors.GREEN
         page.update()
 
     delete_button.on_click = on_delete
     edit_button.on_click = on_edit
 
-    nav_bar = ft.SafeArea(
+    nav_bar = ft.Container(
         content=build_bottom_bar(page),
         align=ft.Alignment.BOTTOM_CENTER,
     )
@@ -208,8 +203,13 @@ def build(page: ft.Page) -> ft.View:
     return ft.View(
         route="/dashboard",
         controls=[
-            page_body,
-            nav_bar
+            ft.SafeArea(
+                expand=True,
+                content=ft.Column(
+                    expand=True,
+                    controls=[page_body, nav_bar],
+                )
+            )
         ],
         padding=0,
     )

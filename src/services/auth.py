@@ -118,23 +118,29 @@ async def delete_account() -> str | None:
 
 
 async def update_profile(
-    first_name: str,
-    last_name: str,
-    phone: str,
-    email: str,
+    first_name: str | None = None,
+    last_name: str | None = None,
+    phone: str | None = None,
+    email: str | None = None,
     password: str | None = None,
 ) -> str | None:
     if not session.token:
         return "Not authenticated."
 
-    payload = {
-        "first_name": first_name,
-        "last_name": last_name,
-        "phone_number": phone,
-        "email": email,
-    }
+    payload = {}
+    if first_name is not None:
+        payload["first_name"] = first_name
+    if last_name is not None:
+        payload["last_name"] = last_name
+    if phone is not None:
+        payload["phone_number"] = phone
+    if email is not None:
+        payload["email"] = email
     if password is not None:
         payload["password"] = password
+
+    if not payload:
+        return None
 
     try:
         async with httpx.AsyncClient() as client:
@@ -149,13 +155,16 @@ async def update_profile(
             if isinstance(data, dict) and data.get("user"):
                 session.user = data["user"]
             else:
-                session.user = {
-                    **session.user,
-                    "first_name": first_name,
-                    "last_name": last_name,
-                    "email": email,
-                    "phone_number": phone,
-                }
+                updated_user = {**session.user}
+                if first_name is not None:
+                    updated_user["first_name"] = first_name
+                if last_name is not None:
+                    updated_user["last_name"] = last_name
+                if email is not None:
+                    updated_user["email"] = email
+                if phone is not None:
+                    updated_user["phone_number"] = phone
+                session.user = updated_user
             return None
         elif response.status_code == 400:
             return "Invalid input data."
@@ -165,6 +174,26 @@ async def update_profile(
             return "Email already in use."
         else:
             return "Failed to update profile. Please try again."
+
+    except httpx.RequestError:
+        return "Cannot reach server. Check your connection."
+
+
+async def request_password_reset(email: str) -> str:
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(f"{API_BASE}/client/auth/forgot-password", json={
+                "email": email,
+            })
+
+        if response.status_code == 200:
+            return "Instructions to reset your password have been sent to your email. Please check your inbox!"
+        elif response.status_code == 400:
+            return "Missing email field."
+        elif response.status_code == 500:
+            return "Server error. Please try again later."
+        else:            
+            return "Failed to request password reset. Please try again."
 
     except httpx.RequestError:
         return "Cannot reach server. Check your connection."

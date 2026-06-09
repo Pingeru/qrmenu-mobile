@@ -33,17 +33,33 @@ def build(page: ft.Page) -> ft.View:
 
     login_button.on_click = on_login           # ← wire up after defining on_login
 
-    return ft.View(
-        route="/login",
+    main_content = ft.Column(
+        expand=True,
         controls=[
-            ft.AppBar(title=ft.Text("Welcome"), center_title=True),
+            ft.AppBar(title=ft.Text("Login"), center_title=True),
+            ft.Text("Please log in to your account", size=16, color=ft.Colors.GREY_600),
             email_field,
             password_field,
             login_button,
             ft.TextButton(
-                "No account? Sign up",
+                "Don't have an account? Register",
                 on_click=lambda _: asyncio.create_task(page.push_route("/register"))
             ),
+            ft.TextButton(
+                "Forgot Password?",
+                on_click=lambda _: asyncio.create_task(page.push_route("/forgot-password"))
+            )
+        ],
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        alignment=ft.MainAxisAlignment.CENTER,
+    )
+    return ft.View(
+        route="/login",
+        controls=[
+            ft.SafeArea(
+                expand=True,
+                content=main_content
+            )
         ],
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         vertical_alignment=ft.MainAxisAlignment.CENTER,
