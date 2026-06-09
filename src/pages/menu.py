@@ -188,7 +188,7 @@ def build(page: ft.Page) -> ft.View:
             page.pop_dialog()
 
             # Small delay to prevent WebSocket race condition when closing/opening dialogs
-            # await asyncio.sleep(0.3)
+            await asyncio.sleep(0.3)
 
             page.show_dialog(ft.AlertDialog(
                 modal=True,
