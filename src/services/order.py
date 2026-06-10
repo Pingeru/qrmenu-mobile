@@ -3,7 +3,9 @@ from services.auth import API_BASE
 from state import session
 
 
-async def create_order(business_id: str, items: list[dict]) -> tuple[dict | None, str | None]:
+async def create_order(
+    business_id: str, items: list[dict]
+) -> tuple[dict | None, str | None]:
     """
     Create an order for the authenticated client.
 

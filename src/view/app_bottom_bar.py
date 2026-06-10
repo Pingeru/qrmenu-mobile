@@ -28,11 +28,27 @@ def build_bottom_bar(page: ft.Page):
         shape=ft.CircularRectangleNotchShape(),
         content=ft.Row(
             controls=[
-                ft.IconButton(icon=ft.Icons.FOOD_BANK, icon_color=ft.Colors.WHITE, on_click=on_menu_click),
-                ft.IconButton(icon=ft.Icons.RECEIPT_LONG, icon_color=ft.Colors.WHITE, on_click=on_orders_click),
+                ft.IconButton(
+                    icon=ft.Icons.FOOD_BANK,
+                    icon_color=ft.Colors.WHITE,
+                    on_click=on_menu_click,
+                ),
+                ft.IconButton(
+                    icon=ft.Icons.RECEIPT_LONG,
+                    icon_color=ft.Colors.WHITE,
+                    on_click=on_orders_click,
+                ),
                 ft.Container(expand=True),
-                ft.IconButton(icon=ft.Icons.PERSON, icon_color=ft.Colors.WHITE, on_click=on_profile_click),
-                ft.IconButton(icon=ft.Icons.LOGOUT, icon_color=ft.Colors.WHITE, on_click=on_logout_click),
+                ft.IconButton(
+                    icon=ft.Icons.PERSON,
+                    icon_color=ft.Colors.WHITE,
+                    on_click=on_profile_click,
+                ),
+                ft.IconButton(
+                    icon=ft.Icons.LOGOUT,
+                    icon_color=ft.Colors.WHITE,
+                    on_click=on_logout_click,
+                ),
             ],
         ),
         height=60,
@@ -40,4 +56,3 @@ def build_bottom_bar(page: ft.Page):
     )
 
     return bottom_appbar
-    

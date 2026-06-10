@@ -28,3 +28,10 @@ copyright = "Copyright (C) 2023-2026 by Flet"
 
 [tool.flet.app]
 path = "src"
+
+[tool.flet.android.permission]
+"android.permission.CAMERA" = true
+
+[tool.flet.android.feature]
+"android.hardware.camera" = true
+"android.hardware.camera.required" = false

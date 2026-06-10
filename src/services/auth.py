@@ -3,6 +3,7 @@ from state import session
 
 API_BASE = "https://qrmenu.dovanay.com/api/v1"  # Change to your actual backend URL
 
+
 async def login(email: str, password: str) -> str | None:
     """
     Returns None on success (token saved to session),
@@ -10,17 +11,20 @@ async def login(email: str, password: str) -> str | None:
     """
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(f"{API_BASE}/client/auth/login", json={
-                "email": email,
-                "password": password,
-            })
+            response = await client.post(
+                f"{API_BASE}/client/auth/login",
+                json={
+                    "email": email,
+                    "password": password,
+                },
+            )
 
         if response.status_code == 200:
             data = response.json()
-            session.token = data["access_token"]   # store JWT
+            session.token = data["access_token"]  # store JWT
             session.refresh_token = data.get("refresh_token")  # store refresh token
-            session.user = data["user"]             # store user info
-            return None                             # success
+            session.user = data["user"]  # store user info
+            return None  # success
         elif response.status_code == 401:
             return "Invalid email or password."
         else:
@@ -39,13 +43,16 @@ async def register(
 ) -> str | None:
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(f"{API_BASE}/client/auth/register", json={
-                "first_name": first_name,
-                "last_name":  last_name,
-                "phone_number": phone,
-                "email": email,
-                "password": password,
-            })
+            response = await client.post(
+                f"{API_BASE}/client/auth/register",
+                json={
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "phone_number": phone,
+                    "email": email,
+                    "password": password,
+                },
+            )
 
         if response.status_code == 201:
             return None
@@ -70,17 +77,20 @@ async def refresh() -> str | None:
     """
     if not session.refresh_token:
         return "No refresh token available."
-    
+
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(f"{API_BASE}/client/auth/refresh", json={
-                "refresh_token": session.refresh_token,
-            })
+            response = await client.post(
+                f"{API_BASE}/client/auth/refresh",
+                json={
+                    "refresh_token": session.refresh_token,
+                },
+            )
 
         if response.status_code == 200:
             data = response.json()
-            session.token = data["access_token"]   # update JWT
-            return None                             # success
+            session.token = data["access_token"]  # update JWT
+            return None  # success
         elif response.status_code == 401:
             return "Refresh token expired. Please log in again."
         else:
@@ -98,7 +108,7 @@ async def delete_account() -> str | None:
         async with httpx.AsyncClient() as client:
             response = await client.delete(
                 f"{API_BASE}/client/auth/delete",
-                headers={"Authorization": f"Bearer {session.token}"}
+                headers={"Authorization": f"Bearer {session.token}"},
             )
 
         if response.status_code == 200:
@@ -182,9 +192,12 @@ async def update_profile(
 async def request_password_reset(email: str) -> str:
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(f"{API_BASE}/client/auth/forgot-password", json={
-                "email": email,
-            })
+            response = await client.post(
+                f"{API_BASE}/client/auth/forgot-password",
+                json={
+                    "email": email,
+                },
+            )
 
         if response.status_code == 200:
             return "Instructions to reset your password have been sent to your email. Please check your inbox!"
@@ -192,7 +205,7 @@ async def request_password_reset(email: str) -> str:
             return "Missing email field."
         elif response.status_code == 500:
             return "Server error. Please try again later."
-        else:            
+        else:
             return "Failed to request password reset. Please try again."
 
     except httpx.RequestError:

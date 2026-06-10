@@ -3,7 +3,12 @@ import asyncio
 import flet as ft
 from state import session
 from services import auth
-from utils.validators import validate_email, validate_password, validate_name, validate_phone
+from utils.validators import (
+    validate_email,
+    validate_password,
+    validate_name,
+    validate_phone,
+)
 from view.app_bottom_bar import build_bottom_bar
 
 
@@ -51,9 +56,7 @@ def build(page: ft.Page) -> ft.View:
         bgcolor=ft.Colors.RED,
         disabled=False,
     )
-    edit_button = ft.TextButton(
-        "Edit"
-    )
+    edit_button = ft.TextButton("Edit")
 
     def set_edit_mode(enabled: bool):
         editing[0] = enabled
@@ -73,10 +76,17 @@ def build(page: ft.Page) -> ft.View:
         confirm_deletion_dialog = ft.AlertDialog(
             modal=True,
             title=ft.Text("Confirm Account Deletion"),
-            content=ft.Text("Are you sure you want to delete your account? This action cannot be undone."),
+            content=ft.Text(
+                "Are you sure you want to delete your account? This action cannot be undone."
+            ),
             actions=[
-                ft.TextButton("Cancel", on_click=lambda _: setattr(confirm_deletion_dialog, "open", False)),
-                ft.TextButton("Delete", on_click=lambda _: asyncio.create_task(confirm_delete())),
+                ft.TextButton(
+                    "Cancel",
+                    on_click=lambda _: setattr(confirm_deletion_dialog, "open", False),
+                ),
+                ft.TextButton(
+                    "Delete", on_click=lambda _: asyncio.create_task(confirm_delete())
+                ),
             ],
         )
         page.show_dialog(confirm_deletion_dialog)
@@ -87,12 +97,14 @@ def build(page: ft.Page) -> ft.View:
             if result is None:
                 await page.push_route("/login")
             else:
-                page.show_dialog(ft.AlertDialog(
-                    modal=True,
-                    title=ft.Text("Error"),
-                    content=ft.Text(result),
-                    actions=[ft.TextButton("OK", on_click=page.pop_dialog)]
-                ))
+                page.show_dialog(
+                    ft.AlertDialog(
+                        modal=True,
+                        title=ft.Text("Error"),
+                        content=ft.Text(result),
+                        actions=[ft.TextButton("OK", on_click=page.pop_dialog)],
+                    )
+                )
                 page.update()
 
     async def on_edit(e):
@@ -109,27 +121,40 @@ def build(page: ft.Page) -> ft.View:
         new_phone = phone_field.value.strip()
         new_password = password_field.value.strip() or None
 
-        first_name = new_first_name if new_first_name != current_user.get("first_name", "") else None
-        last_name = new_last_name if new_last_name != current_user.get("last_name", "") else None
+        first_name = (
+            new_first_name
+            if new_first_name != current_user.get("first_name", "")
+            else None
+        )
+        last_name = (
+            new_last_name
+            if new_last_name != current_user.get("last_name", "")
+            else None
+        )
         email = new_email if new_email != current_user.get("email", "") else None
         phone = new_phone if new_phone != current_user.get("phone_number", "") else None
         password = new_password
 
         if first_name is not None:
             error = validate_name(first_name, "First name")
-            if error: errors.append(error)
+            if error:
+                errors.append(error)
         if last_name is not None:
             error = validate_name(last_name, "Last name")
-            if error: errors.append(error)
+            if error:
+                errors.append(error)
         if email is not None:
             error = validate_email(email)
-            if error: errors.append(error)
+            if error:
+                errors.append(error)
         if phone is not None:
             error = validate_phone(phone)
-            if error: errors.append(error)
+            if error:
+                errors.append(error)
         if password is not None:
             error = validate_password(password)
-            if error: errors.append(error)
+            if error:
+                errors.append(error)
 
         if errors:
             error_text.value = "\n".join(errors)
@@ -157,7 +182,11 @@ def build(page: ft.Page) -> ft.View:
         phone_field.value = new_phone
         password_field.value = ""
         set_edit_mode(False)
-        error_text.value = "" if not any([first_name, last_name, email, phone, password]) else "Profile updated successfully."
+        error_text.value = (
+            ""
+            if not any([first_name, last_name, email, phone, password])
+            else "Profile updated successfully."
+        )
         error_text.color = ft.Colors.GREEN
         page.update()
 
@@ -208,14 +237,8 @@ def build(page: ft.Page) -> ft.View:
                 content=ft.Column(
                     expand=True,
                     controls=[page_body, nav_bar],
-                )
+                ),
             )
         ],
         padding=0,
     )
-
-
-
-
-
-

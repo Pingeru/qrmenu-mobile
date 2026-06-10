@@ -52,13 +52,16 @@ def build(page: ft.Page) -> ft.View:
             return
 
         # Store references to controls we'll update
-        item_controls_map = {}  # product_id -> {qty_text, remove_btn, add_btn, total_text, row}
+        item_controls_map = (
+            {}
+        )  # product_id -> {qty_text, remove_btn, add_btn, total_text, row}
         item_row_map = {}  # product_id -> row control
         total_price_text = None
         items_column = None
 
         def rebuild_item_row(it):
             """Build a row for a single cart item with update-friendly controls."""
+
             def make_remove(product_id):
                 def _remove(e):
                     session.remove_from_cart(product_id)
@@ -68,6 +71,7 @@ def build(page: ft.Page) -> ft.View:
                     else:
                         refresh_sheet_display()
                         refresh_fab()
+
                 return _remove
 
             def make_add(product_id, name, price):
@@ -78,6 +82,7 @@ def build(page: ft.Page) -> ft.View:
                     )
                     refresh_sheet_display()
                     refresh_fab()
+
                 return _add
 
             qty_text = ft.Text(
@@ -131,30 +136,40 @@ def build(page: ft.Page) -> ft.View:
         def refresh_sheet_display():
             """Update only the changed values without rebuilding the entire sheet."""
             nonlocal total_price_text, items_column
-            
+
             # Check for removed items and remove their rows
-            removed_product_ids = [pid for pid in item_controls_map if not any(item["product_id"] == pid for item in session.cart)]
+            removed_product_ids = [
+                pid
+                for pid in item_controls_map
+                if not any(item["product_id"] == pid for item in session.cart)
+            ]
             for pid in removed_product_ids:
                 row_to_remove = item_row_map.get(pid)
-                if row_to_remove and items_column and row_to_remove in items_column.controls:
+                if (
+                    row_to_remove
+                    and items_column
+                    and row_to_remove in items_column.controls
+                ):
                     items_column.controls.remove(row_to_remove)
                 del item_controls_map[pid]
                 del item_row_map[pid]
-            
+
             # Update quantities and totals for remaining items
             for item in session.cart:
                 pid = item["product_id"]
                 if pid in item_controls_map:
                     controls = item_controls_map[pid]
                     controls["qty_text"].value = str(item["quantity"])
-                    controls["total_text"].value = f"${item['price'] * item['quantity']:.2f}"
+                    controls["total_text"].value = (
+                        f"${item['price'] * item['quantity']:.2f}"
+                    )
                     controls["qty_text"].update()
                     controls["total_text"].update()
-            
+
             if total_price_text:
                 total_price_text.value = f"${session.cart_total():.2f}"
                 total_price_text.update()
-            
+
             # Update the column to reflect the removed rows
             if items_column:
                 items_column.update()
@@ -165,7 +180,7 @@ def build(page: ft.Page) -> ft.View:
             place_btn.disabled = True
             status_text.value = "Placing order…"
             page.update()
-         
+
             order_items = [
                 {"product_id": i["product_id"], "quantity": i["quantity"]}
                 for i in session.cart
@@ -188,20 +203,25 @@ def build(page: ft.Page) -> ft.View:
             page.pop_dialog()
 
             # Small delay to prevent WebSocket race condition when closing/opening dialogs
-            # await asyncio.sleep(0.3)
+            await asyncio.sleep(0.3)
 
-            page.show_dialog(ft.AlertDialog(
-                modal=True,
-                title=ft.Text("Order placed! 🎉"),
-                content=ft.Text(
-                    f"Your order has been received.\n"
-                    f"Total: ${order.get('total_amount', 0.0):.2f}"
-                ),
-                actions=[
-                    ft.TextButton("View Orders", on_click=lambda _: asyncio.create_task(_go_orders())),
-                    ft.TextButton("OK", on_click=lambda _: page.pop_dialog()),
-                ],
-            ))
+            page.show_dialog(
+                ft.AlertDialog(
+                    modal=True,
+                    title=ft.Text("Order placed! 🎉"),
+                    content=ft.Text(
+                        f"Your order has been received.\n"
+                        f"Total: ${order.get('total_amount', 0.0):.2f}"
+                    ),
+                    actions=[
+                        ft.TextButton(
+                            "View Orders",
+                            on_click=lambda _: asyncio.create_task(_go_orders()),
+                        ),
+                        ft.TextButton("OK", on_click=lambda _: page.pop_dialog()),
+                    ],
+                )
+            )
             page.update()
 
         async def _go_orders():
@@ -233,7 +253,9 @@ def build(page: ft.Page) -> ft.View:
             controls=[
                 ft.Row(
                     controls=[
-                        ft.Text("Your Cart", size=18, weight=ft.FontWeight.BOLD, expand=True),
+                        ft.Text(
+                            "Your Cart", size=18, weight=ft.FontWeight.BOLD, expand=True
+                        ),
                         ft.IconButton(
                             icon=ft.Icons.CLOSE,
                             icon_size=20,
@@ -246,7 +268,9 @@ def build(page: ft.Page) -> ft.View:
                 ft.Divider(),
                 ft.Row(
                     controls=[
-                        ft.Text("Total", size=15, weight=ft.FontWeight.W_600, expand=True),
+                        ft.Text(
+                            "Total", size=15, weight=ft.FontWeight.W_600, expand=True
+                        ),
                         total_price_text,
                     ],
                 ),
@@ -270,12 +294,11 @@ def build(page: ft.Page) -> ft.View:
         page.show_dialog(sheet)
         page.update()
 
-
-
     # ── cart helpers on product cards ─────────────────────────────────────────
 
     def build_cart_controls(product: dict, business_id: str) -> ft.IconButton:
         """Returns add to cart button for product card."""
+
         def on_add(e):
             session.add_to_cart(product, business_id)
             refresh_fab()
@@ -291,7 +314,9 @@ def build(page: ft.Page) -> ft.View:
 
     async def on_qr_click(e):
         page_body.controls = [
-            ft.Text("Opening camera… Scanning QR code", size=18, weight=ft.FontWeight.BOLD),
+            ft.Text(
+                "Opening camera… Scanning QR code", size=18, weight=ft.FontWeight.BOLD
+            ),
             ft.ProgressBar(value=None, width=300),
         ]
         page.update()
@@ -415,15 +440,20 @@ def build(page: ft.Page) -> ft.View:
                         ft.Container(
                             content=ft.Image(
                                 src=(
-                                    product.get("image_path", "")
-                                    .replace("http://", "https://")
+                                    product.get("image_path", "").replace(
+                                        "http://", "https://"
+                                    )
                                     or "https://via.placeholder.com/150?text=No+Image"
                                 ),
                                 fit=ft.BoxFit.FILL,
                                 error_content=ft.Icon(
-                                    ft.Icons.IMAGE_NOT_SUPPORTED, size=50, color=ft.Colors.GREY
+                                    ft.Icons.IMAGE_NOT_SUPPORTED,
+                                    size=50,
+                                    color=ft.Colors.GREY,
                                 ),
-                                border_radius=ft.BorderRadius.only(top_left=12, top_right=12),
+                                border_radius=ft.BorderRadius.only(
+                                    top_left=12, top_right=12
+                                ),
                                 expand=True,
                             ),
                             expand=True,
@@ -433,7 +463,12 @@ def build(page: ft.Page) -> ft.View:
                                 controls=[
                                     ft.Row(
                                         controls=[
-                                            ft.Text(product["name"], size=13, weight=ft.FontWeight.W_500, expand=True),
+                                            ft.Text(
+                                                product["name"],
+                                                size=13,
+                                                weight=ft.FontWeight.W_500,
+                                                expand=True,
+                                            ),
                                             ft.Text(
                                                 f"${product['price']:.2f}",
                                                 size=13,
@@ -441,7 +476,9 @@ def build(page: ft.Page) -> ft.View:
                                                 color=ft.Colors.GREEN,
                                             ),
                                         ],
-                                        margin=ft.Margin(bottom=0, top=4, left=0, right=0),
+                                        margin=ft.Margin(
+                                            bottom=0, top=4, left=0, right=0
+                                        ),
                                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                                     ),
                                     ft.Text(
@@ -459,7 +496,7 @@ def build(page: ft.Page) -> ft.View:
                                 spacing=6,
                             ),
                             padding=ft.Padding.only(left=12, right=12, bottom=12),
-                        )
+                        ),
                     ],
                     horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
                     alignment=ft.MainAxisAlignment.START,
@@ -488,7 +525,9 @@ def build(page: ft.Page) -> ft.View:
                     controls=[
                         ft.IconButton(
                             icon=ft.Icons.ARROW_BACK,
-                            on_click=lambda e: asyncio.create_task(on_back_to_categories(e)),
+                            on_click=lambda e: asyncio.create_task(
+                                on_back_to_categories(e)
+                            ),
                         ),
                         ft.Text("Products", size=18, weight=ft.FontWeight.BOLD),
                     ],
@@ -555,11 +594,10 @@ def build(page: ft.Page) -> ft.View:
                     expand=True,
                     controls=[main_content, nav_bar],
                     alignment=ft.MainAxisAlignment.SPACE_EVENLY,
-                )
+                ),
             )
         ],
         padding=0,
         floating_action_button=cart_fab,
         floating_action_button_location=ft.FloatingActionButtonLocation.CENTER_DOCKED,
     )
-

@@ -14,9 +14,11 @@ async def fetch_categories(business_id: str) -> list[dict[str, Any]]:
         data = resp.json()
         # Additional client-side filter for safety
         return [
-            category for category in data.get("categories", [])
-            if category.get("is_active", True) and category.get("business_id") == business_id
-        ]   
+            category
+            for category in data.get("categories", [])
+            if category.get("is_active", True)
+            and category.get("business_id") == business_id
+        ]
 
     return []
 
@@ -38,6 +40,8 @@ async def fetch_products_for_category(category_id: str) -> list[dict[str, Any]]:
         return []
 
     if isinstance(data, dict) and isinstance(data.get("products"), list):
-        return [product for product in data["products"] if product.get("is_active", True)]
+        return [
+            product for product in data["products"] if product.get("is_active", True)
+        ]
 
     return []

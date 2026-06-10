@@ -4,13 +4,12 @@ import flet as ft
 import services.order as order_service
 from view.app_bottom_bar import build_bottom_bar
 
-
 # ── colour helpers ────────────────────────────────────────────────────────────
 
 _STATUS_COLORS: dict[str, ft.Colors] = {
-    "placed":    ft.Colors.BLUE,
+    "placed": ft.Colors.BLUE,
     "preparing": ft.Colors.ORANGE,
-    "ready":     ft.Colors.GREEN,
+    "ready": ft.Colors.GREEN,
     "delivered": ft.Colors.GREEN_700,
     "cancelled": ft.Colors.RED,
 }
@@ -32,6 +31,7 @@ def _status_badge(status: str) -> ft.Container:
 
 
 # ── page builder ──────────────────────────────────────────────────────────────
+
 
 def build(page: ft.Page) -> ft.View:
     nav_bar = ft.Container(
@@ -71,9 +71,19 @@ def build(page: ft.Page) -> ft.View:
             ft.Container(
                 content=ft.Column(
                     controls=[
-                        ft.Icon(ft.Icons.ERROR_OUTLINE, size=48, color=ft.Colors.RED_400),
-                        ft.Text(msg, size=14, text_align=ft.TextAlign.CENTER, color=ft.Colors.RED_400),
-                        ft.TextButton("Retry", on_click=lambda _: asyncio.create_task(load_orders())),
+                        ft.Icon(
+                            ft.Icons.ERROR_OUTLINE, size=48, color=ft.Colors.RED_400
+                        ),
+                        ft.Text(
+                            msg,
+                            size=14,
+                            text_align=ft.TextAlign.CENTER,
+                            color=ft.Colors.RED_400,
+                        ),
+                        ft.TextButton(
+                            "Retry",
+                            on_click=lambda _: asyncio.create_task(load_orders()),
+                        ),
                     ],
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                     spacing=12,
@@ -90,8 +100,17 @@ def build(page: ft.Page) -> ft.View:
             ft.Container(
                 content=ft.Column(
                     controls=[
-                        ft.Icon(ft.Icons.RECEIPT_LONG_OUTLINED, size=64, color=ft.Colors.GREY_400),
-                        ft.Text("No orders yet", size=16, weight=ft.FontWeight.W_500, color=ft.Colors.GREY),
+                        ft.Icon(
+                            ft.Icons.RECEIPT_LONG_OUTLINED,
+                            size=64,
+                            color=ft.Colors.GREY_400,
+                        ),
+                        ft.Text(
+                            "No orders yet",
+                            size=16,
+                            weight=ft.FontWeight.W_500,
+                            color=ft.Colors.GREY,
+                        ),
                         ft.Text(
                             "Scan a QR code on the Menu tab to place your first order.",
                             size=13,
@@ -112,11 +131,11 @@ def build(page: ft.Page) -> ft.View:
     # ── order card ────────────────────────────────────────────────────────────
 
     def build_order_card(order: dict) -> ft.Container:
-        order_id   = order.get("_id", "")
-        status     = order.get("status", "placed")
-        items      = order.get("items", [])
+        order_id = order.get("_id", "")
+        status = order.get("status", "placed")
+        items = order.get("items", [])
         # Backend returns total_amount, map to total for display
-        total      = order.get("total_amount", 0.0)
+        total = order.get("total_amount", 0.0)
         created_at = order.get("created_at", "")
 
         # Format date nicely if ISO string present
@@ -145,17 +164,24 @@ def build(page: ft.Page) -> ft.View:
         # Cancel button — only visible when status is "placed"
         cancel_btn_row: list[ft.Control] = []
         if status == "placed":
+
             async def on_cancel(e, oid=order_id):
                 ok, err = await order_service.cancel_order(oid)
                 if ok:
                     await load_orders()
                 else:
-                    page.show_dialog(ft.AlertDialog(
-                        modal=True,
-                        title=ft.Text("Cannot cancel"),
-                        content=ft.Text(err or "Unknown error"),
-                        actions=[ft.TextButton("OK", on_click=lambda _: page.pop_dialog())],
-                    ))
+                    page.show_dialog(
+                        ft.AlertDialog(
+                            modal=True,
+                            title=ft.Text("Cannot cancel"),
+                            content=ft.Text(err or "Unknown error"),
+                            actions=[
+                                ft.TextButton(
+                                    "OK", on_click=lambda _: page.pop_dialog()
+                                )
+                            ],
+                        )
+                    )
                     page.update()
 
             cancel_btn_row = [
@@ -196,8 +222,15 @@ def build(page: ft.Page) -> ft.View:
                     # Total row
                     ft.Row(
                         controls=[
-                            ft.Text("Total", size=14, weight=ft.FontWeight.W_600, expand=True),
-                            ft.Text(f"${total:.2f}", size=14, weight=ft.FontWeight.BOLD),
+                            ft.Text(
+                                "Total",
+                                size=14,
+                                weight=ft.FontWeight.W_600,
+                                expand=True,
+                            ),
+                            ft.Text(
+                                f"${total:.2f}", size=14, weight=ft.FontWeight.BOLD
+                            ),
                         ],
                     ),
                     *cancel_btn_row,
@@ -276,7 +309,7 @@ def build(page: ft.Page) -> ft.View:
                         app_bar,
                         main_content,
                     ],
-                )
+                ),
             ),
             nav_bar,
         ],

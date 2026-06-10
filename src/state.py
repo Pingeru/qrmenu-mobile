@@ -21,12 +21,14 @@ class AppState:
             if item["product_id"] == product["_id"]:
                 item["quantity"] += 1
                 return
-        self.cart.append({
-            "product_id": product["_id"],
-            "name": product["name"],
-            "price": float(product["price"]),
-            "quantity": 1,
-        })
+        self.cart.append(
+            {
+                "product_id": product["_id"],
+                "name": product["name"],
+                "price": float(product["price"]),
+                "quantity": 1,
+            }
+        )
 
     def remove_from_cart(self, product_id: str) -> None:
         """Decrement quantity; remove item when it reaches 0."""
