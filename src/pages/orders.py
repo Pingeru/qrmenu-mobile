@@ -308,10 +308,11 @@ def build(page: ft.Page) -> ft.View:
                     controls=[
                         app_bar,
                         main_content,
+                        nav_bar,
                     ],
                 ),
             ),
-            nav_bar,
+            
         ],
         padding=0,
         on_scroll=None,

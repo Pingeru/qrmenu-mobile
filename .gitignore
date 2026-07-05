@@ -165,3 +165,4 @@ storage/
 
 # API documentation
 API_DOCUMENTATION.md
+.vscode/tasks.json

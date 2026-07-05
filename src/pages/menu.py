@@ -1,5 +1,11 @@
-import flet as ft
 import asyncio
+import os
+import tempfile
+import uuid
+
+import flet as ft
+import flet_camera as fc
+
 import services.menu as menu_service
 import services.order as order_service
 from services.qr_scanner import scan_qr_code
@@ -310,28 +316,45 @@ def build(page: ft.Page) -> ft.View:
             on_click=on_add,
         )
 
-    # ── QR scan ───────────────────────────────────────────────────────────────
+# ── QR scan ───────────────────────────────────────────────────────────────
 
-    async def on_qr_click(e):
-        page_body.controls = [
-            ft.Text(
-                "Opening camera… Scanning QR code", size=18, weight=ft.FontWeight.BOLD
-            ),
-            ft.ProgressBar(value=None, width=300),
-        ]
+    camera_ref = ft.Ref[fc.Camera]()
+    
+    qr_status_text = ft.Text(
+        "Kamera başlatılıyor...",
+        size=14,
+        color=ft.Colors.ORANGE_700,
+        text_align=ft.TextAlign.CENTER,
+    )
+    
+    capture_button = ft.Button(
+        "Capture & Scan",
+        icon=ft.Icons.CAMERA_ALT,
+        disabled=True,
+    )
+
+    # Kamera durum değişikliklerini dinleyen fonksiyon
+    def handle_camera_state(e):
+        print(f"Camera state changed: {e.data}")
+        if e.data == "started":
+            capture_button.disabled = False
+            qr_status_text.value = "Kamera hazır! QR kodunu hizalayıp butona basın."
+            qr_status_text.color = ft.Colors.GREEN_700
+        elif e.data == "initializing":
+            capture_button.disabled = True
+            qr_status_text.value = "Kamera donanımı hazırlanıyor..."
+            qr_status_text.color = ft.Colors.ORANGE_700
+        elif "error" in e.data.lower() or e.data == "failed":
+            capture_button.disabled = True
+            qr_status_text.value = f"Kamera başlatılamadı: {e.data}"
+            qr_status_text.color = ft.Colors.RED_700
+        else:
+            qr_status_text.value = f"Kamera Durumu: {e.data}"
         page.update()
 
-        business_id = await scan_qr_code()
-        if not business_id:
-            page_body.controls = [
-                ft.Text("No QR code detected or scan cancelled.", size=16),
-                ft.Button("Try Again", on_click=on_qr_click),
-            ]
-            page.update()
-            return
-
+    async def load_menu_for_business(business_id: str):
         page_body.controls = [
-            ft.Text("Loading menu…", size=18, weight=ft.FontWeight.BOLD),
+            ft.Text("Menü yükleniyor…", size=18, weight=ft.FontWeight.BOLD),
             ft.ProgressBar(value=None, width=300),
         ]
         page.update()
@@ -342,6 +365,121 @@ def build(page: ft.Page) -> ft.View:
         current_categories = await menu_service.fetch_categories(business_id)
         session.menu_categories = current_categories
         await build_category_grid()
+
+    async def handle_qr_capture(e=None):
+        if not camera_ref.current:
+            qr_status_text.value = "Kamera bileşeni bulunamadı."
+            page.update()
+            return
+
+        try:
+            capture_button.disabled = True
+            qr_status_text.value = "Fotoğraf çekiliyor..."
+            qr_status_text.color = ft.Colors.BLUE_700
+            page.update()
+
+            picture_bytes = await camera_ref.current.take_picture()
+            if not picture_bytes:
+                qr_status_text.value = "Görüntü alınamadı, tekrar deneyin."
+                qr_status_text.color = ft.Colors.RED_700
+                capture_button.disabled = False
+                page.update()
+                return
+
+            with tempfile.NamedTemporaryFile(
+                delete=False, suffix=".jpg", prefix=f"qr_{uuid.uuid4().hex}_"
+            ) as temp_file:
+                temp_file.write(picture_bytes)
+                image_path = temp_file.name
+
+            qr_status_text.value = "QR kod çözümleniyor..."
+            page.update()
+
+            business_id = await scan_qr_code(image_path)
+
+            if os.path.exists(image_path):
+                os.remove(image_path)
+
+            if business_id:
+                await load_menu_for_business(business_id)
+                return
+
+            qr_status_text.value = "QR kod algılanamadı. Lütfen tekrar deneyin."
+            qr_status_text.color = ft.Colors.RED_700
+            capture_button.disabled = False
+            page.update()
+            
+        except Exception as ex:
+            qr_status_text.value = f"Tarama hatası: {ex}"
+            qr_status_text.color = ft.Colors.RED_700
+            capture_button.disabled = False
+            page.update()
+
+    capture_button.on_click = lambda e: asyncio.create_task(handle_qr_capture(e))
+
+    def reset_qr_view():
+        page_body.controls = [intro_text, qr_button]
+        page.update()
+
+    async def on_qr_click(e):
+        # 2. ADIM: Arayüz durumunu sıfırla
+        capture_button.disabled = True
+        qr_status_text.value = "Kamera başlatılıyor..."
+        qr_status_text.color = ft.Colors.ORANGE_700
+
+        # Donanım kilitlenmelerini önlemek adına kamerayı burada taze bir instance olarak üretiyoruz
+        fresh_camera = fc.Camera(
+            ref=camera_ref,
+            on_state_change=handle_camera_state,
+        )
+
+        page_body.controls = [
+            ft.Text("QR Menü Taratın", size=18, weight=ft.FontWeight.BOLD),
+            qr_status_text,
+            ft.Container(
+                expand=True, # 320x320 baskısını kaldırdık, alanı doldurmasına izin veriyoruz
+                border_radius=12,
+                bgcolor=ft.Colors.BLACK, 
+                content=fresh_camera, 
+            ),
+            capture_button,
+            ft.TextButton("İptal", on_click=lambda _: reset_qr_view()),
+        ]
+        page.update()
+
+        # 🚀 ASIL EKSİK OLAN VE DONANIMI AYAĞA KALDIRACAK KISIM:
+        try:
+            # 1. Cihazdaki tüm kameraları bul
+            cameras = await camera_ref.current.get_available_cameras()
+            if not cameras:
+                qr_status_text.value = "Cihazda uygun kamera bulunamadı!"
+                qr_status_text.color = ft.Colors.RED_700
+                page.update()
+                return
+            
+            # 2. Arka kamerayı seç (Eğer arka kamera yoksa bulduğu ilkini al)
+            back_cam = next((c for c in cameras if c.lens_direction == fc.CameraLensDirection.BACK), cameras[0])
+
+            # 3. Kamerayı donanımsal olarak başlat (Siyah ekranı çözen komut)
+            await camera_ref.current.initialize(
+                description=back_cam,
+                resolution_preset=fc.ResolutionPreset.MEDIUM,
+                image_format_group=fc.ImageFormatGroup.JPEG,
+            )
+
+            # --- BURAYA EKLE ---
+            # Initialize başarılıysa butonu hemen aktifleştir
+            capture_button.disabled = False
+            qr_status_text.value = "Kamera hazır! QR kodunu hizalayıp butona basın."
+            qr_status_text.color = ft.Colors.GREEN_700
+            page.update()
+            # -------------------
+
+        except Exception as ex:
+            qr_status_text.value = f"Başlatma hatası: {ex}"
+            qr_status_text.color = ft.Colors.RED_700
+            page.update()
+            print(f"Kamera initialize hatası: {ex}")
 
     # ── category grid ─────────────────────────────────────────────────────────
 

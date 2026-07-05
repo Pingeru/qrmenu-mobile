@@ -1,53 +1,53 @@
-import cv2
 import asyncio
+import os
 from typing import Optional
+from PIL import Image
+from pyzbar.pyzbar import decode, ZBarSymbol
 
-
-async def scan_qr_code() -> Optional[str]:
-    """
-    Scan a QR code using the device camera.
-    Returns the decoded QR code data or None if no QR code is found or user cancels.
-    Runs in a separate thread to avoid blocking the UI.
-    """
+async def scan_qr_code(image_path: Optional[str] = None) -> Optional[str]:
+    """Decode a QR code from a captured image file path."""
+    if not image_path:
+        return None
+    
     loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, _scan_qr_code_sync)
+    return await loop.run_in_executor(None, _decode_image_sync, image_path)
 
-
-def _scan_qr_code_sync() -> Optional[str]:
-    """Synchronous QR code scanning using OpenCV."""
-    cap = cv2.VideoCapture(0)
-
-    if not cap.isOpened():
+def _decode_image_sync(image_path: str) -> Optional[str]:
+    """Decode a QR code from an image file using pyzbar and Pillow."""
+    normalized_path = _normalize_image_path(image_path)
+    if not normalized_path or not os.path.exists(normalized_path):
         return None
 
     try:
-        # Try to detect QR codes from camera frames
-        detector = cv2.QRCodeDetector()
-
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-
-            # Detect and decode QR code
-            data, bbox, straight_qrcode = detector.detectAndDecode(frame)
-
-            # we should return business id part
-            if data:
-                # Extract business_id, handling trailing slashes
-                business_id = data.rstrip("/").split("/")[-1]
-                if business_id:  # Ensure we got a valid ID
-                    return business_id
-
-            # Display the frame (optional, for feedback)
-            # cv2.imshow("QR Code Scanner - Press 'q' to cancel", frame)
-
-            # Press 'q' to cancel scanning
-            # if cv2.waitKey(1) & 0xFF == ord("q"):
-            #    break
-
-    finally:
-        cap.release()
-        cv2.destroyAllWindows()
+        # Pillow ile resmi aç
+        with Image.open(normalized_path) as img:
+            # pyzbar ile sadece QR kodları ara (Performansı artırır)
+            decoded_objects = decode(img, symbols=[ZBarSymbol.QRCODE])
+            
+            if decoded_objects:
+                # İlk bulduğu QR kodun verisini utf-8 olarak çöz
+                qr_data = decoded_objects[0].data.decode('utf-8')
+                return _extract_business_id(qr_data)
+                
+    except Exception:
+        # Mobil platformda çökme yaşanmaması için hata durumunda yutulur
+        pass
 
     return None
+
+def _normalize_image_path(image_path: str) -> Optional[str]:
+    if not image_path:
+        return None
+    normalized = image_path.strip()
+    if normalized.startswith("file://"):
+        normalized = normalized[7:]
+    return normalized
+
+def _extract_business_id(decoded_value: str) -> Optional[str]:
+    if not decoded_value:
+        return None
+    cleaned = decoded_value.strip().rstrip("/")
+    if not cleaned:
+        return None
+    business_id = cleaned.split("/")[-1]
+    return business_id or None
